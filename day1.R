@@ -96,8 +96,14 @@ fiw7 <- Estimations_data %>%
   rename(fiw_1992="1992", fiw_1993="1993", fiw_2012="2012", fiw_2013="2013")
 
 fiw7 <- fiw7 %>% 
-  mutate(fiw9293=rowSums(fiw7[, c("fiw_1992", "fiw_1993")])/2,
-         fiw1213=rowSums(fiw7[, c("fiw_2012", "fiw_2013")])/2)
+  mutate("9293"=rowSums(fiw7[, c("fiw_1992", "fiw_1993")])/2,
+         "1213"=rowSums(fiw7[, c("fiw_2012", "fiw_2013")])/2) %>% 
+  select(countryname, "9293", "1213") #%>% 
+  #drop_na("9293") %>% 
+  #drop_na("1213")
+
+fiw7 <- fiw7 %>% 
+  pivot_longer(cols = c("9293", "1213"), names_to = "year", values_to = "fiw")
 
 ntl7 <- Estimations_data %>%
   select(year, countryname, lndn13) %>% 
@@ -105,8 +111,14 @@ ntl7 <- Estimations_data %>%
   rename(lndn_1992="1992", lndn_1993="1993" , lndn_2012="2012", lndn_2013="2013")
 
 ntl7 <- ntl7 %>% 
-  mutate(ntl9293=rowSums(ntl7[, c("lndn_1992", "lndn_1993")])/2,
-         ntl1213=rowSums(ntl7[, c("lndn_2012", "lndn_2013")])/2)
+  mutate("9293"=rowSums(ntl7[, c("lndn_1992", "lndn_1993")])/2,
+         "1213"=rowSums(ntl7[, c("lndn_2012", "lndn_2013")])/2) %>% 
+  select(countryname, "9293", "1213") %>% 
+  drop_na("9293") %>% 
+  drop_na("1213")
+
+ntl7 <- ntl7 %>% 
+  pivot_longer(cols = c("9293", "1213"), names_to = "year", values_to = "ntl")
 
 GDP7 <- Estimations_data %>%
   select(year, countryname, lngdp14) %>% 
@@ -114,13 +126,40 @@ GDP7 <- Estimations_data %>%
   rename(lngdp14_1992="1992", lngdp14_1993="1993" , lngdp14_2012="2012", lngdp14_2013="2013")
 
 GDP7 <- GDP7 %>% 
-  mutate(gdp9293=rowSums(GDP7[, c("lngdp14_1992", "lngdp14_1993")])/2,
-         gdp1213=rowSums(GDP7[, c("lngdp14_2012", "lngdp14_2013")])/2)
+  mutate("9293"=rowSums(GDP7[, c("lngdp14_1992", "lngdp14_1993")])/2,
+         "1213"=rowSums(GDP7[, c("lngdp14_2012", "lngdp14_2013")])/2) %>% 
+  select(countryname, "9293", "1213") %>% 
+  drop_na("9293") %>% 
+  drop_na("1213")
 
+GDP7 <- GDP7 %>% 
+  pivot_longer(cols = c("9293", "1213"), names_to = "year", values_to = "gdp")
 
+Table1_7 <- GDP7 %>% 
+  left_join(fiw7, by = c("countryname", "year")) %>% 
+  left_join(ntl7, by = c("countryname", "year")) #%>% 
+  #drop_na(fiw) %>% 
+  #drop_na(ntl)
 
+est_7 <- plm(formula = gdp ~ ntl + fiw + I(fiw^2) + ntl*fiw, effect = "twoways",
+             data = Table1_7, model = "within", index = c("countryname","year"))
+summary(est_7)
+coeftest(est_7, vcov = vcovHC)
 
+install.packages("quantreg")
+library(quantreg)
 
+quantile(es_1184$fiw, probs = c(0.25, 0.75))
+quantile(Estimations_data$fiw, probs = c(0.25, 0.75),na.rm = T)
 
+df_1 <- Estimations_data %>% 
+  select("countryname","year","lngdp14", "lndn13", "fiw") %>% 
+  drop_na("lngdp14") %>% 
+  drop_na("lndn13") %>% 
+  drop_na("fiw")
 
+qt_fiw_0.25 <- quantile(df_1$fiw, probs = c(0.25),na.rm = T)
+qt_fiw_0.75 <- quantile(df_1$fiw, probs = c(0.75),na.rm = T)
+Sigma_4 <- (est_4$coefficients[4]/est_4$coefficients[1])*(qt_fiw_0.75 - qt_fiw_0.25)
+Sigma_3 <- (est_3$coefficients[3]/est_3$coefficients[1])*(qt_fiw_0.75 - qt_fiw_0.25)
 
