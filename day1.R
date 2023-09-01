@@ -89,5 +89,38 @@ coeftest(est_7, vcov = vcovHC)
 est_7 <- plm(formula = lngdp14 ~ lndn13 + fiw + I(fiw^2) + lndn13*fiw, effect = "twoways",
                data = Estimations_data, model = "within", index = c("countryname","year"))
 summary(est_7)
-coeftest(est_7, vcov = vcovHC)
-  
+
+fiw7 <- Estimations_data %>%
+  select(year, countryname, fiw) %>% 
+  pivot_wider(names_from = year, values_from = fiw) %>% 
+  rename(fiw_1992="1992", fiw_1993="1993", fiw_2012="2012", fiw_2013="2013")
+
+fiw7 <- fiw7 %>% 
+  mutate(fiw9293=rowSums(fiw7[, c("fiw_1992", "fiw_1993")])/2,
+         fiw1213=rowSums(fiw7[, c("fiw_2012", "fiw_2013")])/2)
+
+ntl7 <- Estimations_data %>%
+  select(year, countryname, lndn13) %>% 
+  pivot_wider(names_from = year, values_from = lndn13) %>% 
+  rename(lndn_1992="1992", lndn_1993="1993" , lndn_2012="2012", lndn_2013="2013")
+
+ntl7 <- ntl7 %>% 
+  mutate(ntl9293=rowSums(ntl7[, c("lndn_1992", "lndn_1993")])/2,
+         ntl1213=rowSums(ntl7[, c("lndn_2012", "lndn_2013")])/2)
+
+GDP7 <- Estimations_data %>%
+  select(year, countryname, lngdp14) %>% 
+  pivot_wider(names_from = year, values_from = lngdp14) %>% 
+  rename(lngdp14_1992="1992", lngdp14_1993="1993" , lngdp14_2012="2012", lngdp14_2013="2013")
+
+GDP7 <- GDP7 %>% 
+  mutate(gdp9293=rowSums(GDP7[, c("lngdp14_1992", "lngdp14_1993")])/2,
+         gdp1213=rowSums(GDP7[, c("lngdp14_2012", "lngdp14_2013")])/2)
+
+
+
+
+
+
+
+
